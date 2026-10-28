@@ -3,4 +3,4 @@ st.title('김똥구우ㅜㅜㅜㅜㅜ')
 a=st.text_input('이름을 입력하세요!')
 b=st.selectbox('좋아하는 별명을 선택하세요',['김똥구','김동구','동동이'])
 if st.button('인사말 생성'):
-  st.wtite('반갑습니다')
+  st.write('반갑습니다')
