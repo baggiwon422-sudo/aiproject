@@ -72,28 +72,4 @@ content_database = {
     },
     "ENFJ": {
         "webtoons": [("바른연애 길잡이 (2018)", "주변 사람들을 긍정적으로 이끄는 리더십 캐릭터의 성장"), ("안나라수마나라 (2010)", "선한 영향력을 전파하는 따뜻한 서사")],
-        "movies": [("코코 (2017)", "가족과 공동체의 소중함, 따뜻한 감동을 주는 애니메이션"), ("그 시절, 우리가 좋아했던 소녀 (2011)", "청춘들의 성장과 서로에게 선한 영향력을 주는 영화")]
-    },
-    "ENTJ": {
-        "webtoons": [("재벌집 막내아들 (2022)", "거대한 비즈니스 제국을 목표로 전략을 펼치는 대서사"), ("더 복서 (2020)", "철저한 계획과 카리스마로 정점을 향해 나가는 이야기")],
-        "movies": [("소셜 네트워크 (2010)", "거대한 기업을 창립하며 야망을 실현해 나가는 실화 영화"), ("이미테이션 게임 (2014)", "치밀한 전략과 카리스마로 팀을 이끄는 영화")]
-    }
-}
-
-# MBTI 드롭다운 선택 상자
-mbti_list = list(content_database.keys())
-selected_mbti = st.selectbox("MBTI 유형을 선택하세요.", mbti_list)
-
-# 추천 실행 버튼
-if st.button("콘텐츠 추천받기"):
-    st.divider()
-    
-    st.markdown(f"### [{selected_mbti}] 유형 추천 콘텐츠 (2010년대 이후)")
-    st.write("")
-    
-    data = content_database[selected_mbti]
-    
-    # 웹툰 추천 출력 (2개)
-    st.markdown("#### 추천 웹툰")
-    for i, (title, desc) in enumerate(data["webtoons"], start=1):
-        st.markdown(f"
+        "movies": [("코코 (2017)", "가족과 공동체의
