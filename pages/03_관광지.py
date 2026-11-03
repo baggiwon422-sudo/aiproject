@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. 세션 상태(Session State) 초기화 (1박 2일 일정 저장용)
+# 2. 세션 상태(Session State) 초기화
 if "day1_plan" not in st.session_state:
     st.session_state["day1_plan"] = ["해운대 해수욕장", "해운대 블루라인파크 (미포철길)", "광안리 해수욕장 (광안대교 야경)", "센텀시티 & 신세계백화점"]
 
@@ -58,3 +58,41 @@ tourist_spots = [
         "lon": 129.0863,
         "desc": "기암절벽과 탁 트인 푸른 바다가 빚어내는 장엄한 절경을 감상할 수 있는 영도의 대표 자연공원입니다."
     },
+    {
+        "name": "BIFF 광장",
+        "lat": 35.0988,
+        "lon": 129.0274,
+        "desc": "부산국제영화제의 발상지로, 쇼핑과 함께 명물인 씨앗호떡 등 다양한 길거리 음식을 즐길 수 있습니다."
+    },
+    {
+        "name": "용두산공원 (부산타워)",
+        "lat": 35.1006,
+        "lon": 129.0330,
+        "desc": "도심 속 언덕에 위치해 부산항과 시내를 한눈에 조망할 수 있는 부산의 상징적인 공원입니다."
+    },
+    {
+        "name": "해동용궁사",
+        "lat": 35.1916,
+        "lon": 129.2230,
+        "desc": "파도치는 바닷가 바로 바위에 지어진 독특하고 아름다운 해상 사찰입니다."
+    },
+    {
+        "name": "센텀시티 & 신세계백화점",
+        "lat": 35.1691,
+        "lon": 129.1293,
+        "desc": "세계 최대 규모의 백화점으로 쇼핑, 스파(스파랜드), 엔터테인먼트를 한곳에서 즐길 수 있습니다."
+    }
+]
+
+df = pd.DataFrame(tourist_spots)
+
+# 4. 부산 중심 좌표로 지도 생성
+m = folium.Map(location=[35.1540, 129.0900], zoom_start=11, tiles="OpenStreetMap")
+
+# 마커 추가
+for idx, row in df.iterrows():
+    folium.Marker(
+        location=[row["lat"], row["lon"]],
+        popup=folium.Popup(f"<b>{row['name']}</b>", max_width=200),
+        tooltip=row["name"],
+        icon=folium.Icon(color
