@@ -61,6 +61,103 @@ tourist_spots = [
     {
         "name": "동대문디자인플라자 (DDP)",
         "lat": 37.5665,
-        "lon": 126.1007,
-        "desc": "곡선미가 돋보이는
+        "lon": 126.9785,
+        "desc": "곡선미가 돋보이는 미래적 건축물로 패션, 디자인 전시 및 야경으로 유명합니다."
+    },
+    {
+        "name": "이태원",
+        "lat": 37.5345,
+        "lon": 126.9946,
+        "desc": "다국적 음식점과 다채로운 문화가 조화를 이루는 서울의 대표적인 글로벌 핫플레이스입니다."
+    },
+    {
+        "name": "롯데월드타워 & 잠실",
+        "lat": 37.5126,
+        "lon": 127.1025,
+        "desc": "123층 전망대 '서울스카이'에서 남한산성과 서울 시내 전체를 내려다보는 스릴을 선사합니다."
+    },
+    {
+        "name": "반포 한강공원",
+        "lat": 37.5104,
+        "lon": 126.9960,
+        "desc": "달빛무지개분수와 함께 한강변 라면, 피크닉 치맥 문화 등 현지인 감성을 그대로 경험할 수 있습니다."
+    }
+]
+
+df = pd.DataFrame(tourist_spots)
+
+# 4. Folium 지도 생성
+m = folium.Map(location=[37.5665, 126.9780], zoom_start=12, tiles="OpenStreetMap")
+
+# 마커 추가
+for idx, row in df.iterrows():
+    folium.Marker(
+        location=[row['lat'], row['lon']],
+        popup=folium.Popup(f"<b>{row['name']}</b>", max_width=200),
+        tooltip=row['name'],
+        icon=folium.Icon(color="red", icon="info-sign")
+    ).add_to(m)
+
+# 5. 지도 화면 출력
+st.subheader("📍 서울 관광지 지도 (마커 클릭 시 상세설명 표출)")
+map_data = st_folium(m, width="100%", height=500)
+
+# 6. 마커 클릭 이벤트에 따른 정보 표출
+st.markdown("---")
+clicked_spot_name = map_data.get("last_object_clicked_tooltip")
+
+if clicked_spot_name:
+    selected_info = df[df['name'] == clicked_spot_name]
+    if not selected_info.empty:
+        spot_data = selected_info.iloc[0]
+        st.subheader(f"🔍 선택한 명소: {spot_data['name']}")
+        st.info(spot_data['desc'])
+        
+        # 일정에 추가할 수 있는 버튼 제공
+        btn_col1, btn_col2 = st.columns(2)
+        with btn_col1:
+            if st.button(f"➕ '{spot_data['name']}' -> Day 1 일정에 추가"):
+                if spot_data['name'] not in st.session_state["day1_plan"]:
+                    st.session_state["day1_plan"].append(spot_data['name'])
+                    st.success("Day 1에 추가되었습니다!")
+        with btn_col2:
+            if st.button(f"➕ '{spot_data['name']}' -> Day 2 일정에 추가"):
+                if spot_data['name'] not in st.session_state["day2_plan"]:
+                    st.session_state["day2_plan"].append(spot_data['name'])
+                    st.success("Day 2에 추가되었습니다!")
+else:
+    st.info("💡 **팁:** 지도 위의 빨간 마커를 클릭하면 해당 장소의 설명과 1박 2일 일정 추가 버튼이 나타납니다.")
+
+# 7. 지도 하단 1박 2일 추천 코스
+st.markdown("---")
+st.subheader("🗓️ 1박 2일 추천 여행 일정표")
+
+col_d1, col_d2 = st.columns(2)
+
+with col_d1:
+    st.markdown("### 🟢 **DAY 1: 전통 문화 & 대표 랜드마크**")
+    st.caption("고궁 탐방부터 서울 전체 야경 감상까지")
     
+    for idx, name in enumerate(st.session_state["day1_plan"]):
+        spot_match = df[df['name'] == name]
+        desc_text = spot_match.iloc[0]['desc'] if not spot_match.empty else ""
+        with st.expander(f"📍 {idx + 1}단계: {name}", expanded=True):
+            st.write(desc_text)
+            
+    if st.button("🗑️ Day 1 일정 초기화"):
+        st.session_state["day1_plan"] = []
+        st.rerun()
+
+with col_d2:
+    st.markdown("### 🔵 **DAY 2: K-컬처, 쇼핑 & 한강 힐링**")
+    st.caption("트렌디한 거리 탐방과 한강 야경 피크닉")
+    
+    for idx, name in enumerate(st.session_state["day2_plan"]):
+        spot_match = df[df['name'] == name]
+        desc_text = spot_match.iloc[0]['desc'] if not spot_match.empty else ""
+        with st.expander(f"📍 {idx + 1}단계: {name}", expanded=True):
+            st.write(desc_text)
+            
+    if st.button("🗑️ Day 2 일정 초기화"):
+        st.session_state["day2_plan"] = []
+        st.rerun()
