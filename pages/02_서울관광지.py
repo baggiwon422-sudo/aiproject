@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 st.title("🗽 외국인 관광객이 사랑하는 서울 명소 TOP 10")
-st.write("지도 위의 마커를 클릭하여 각 관광지의 상세 정보를 확인해보세요!")
+st.write("지도 위의 마커를 클릭하면 하단에 해당 명소의 상세 설명이 표시됩니다.")
 
 # 2. 관광지 데이터 (위도, 경도, 설명 포함)
 tourist_spots = [
@@ -55,7 +55,7 @@ tourist_spots = [
         "name": "동대문디자인플라자 (DDP)",
         "lat": 37.5665,
         "lon": 126.1007,
-        "desc": "곡선미가 돋보이는 곡선형 미래적 건축물로 패션, 디자인 전시 및 야경으로 유명합니다."
+        "desc": "곡선미가 돋보이는 미래적 건축물로 패션, 디자인 전시 및 야경으로 유명합니다."
     },
     {
         "name": "이태원",
@@ -77,13 +77,12 @@ tourist_spots = [
     }
 ]
 
-# DataFrame 변환
 df = pd.DataFrame(tourist_spots)
 
-# 3. Folium 지도 생성 (서울 시청 중심 coordinates)
+# 3. Folium 지도 생성
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=12, tiles="OpenStreetMap")
 
-# 마커 추가
+# 마커 추가 (tooltip에 명소 이름 설정하여 클릭 시 감지 가능하도록 함)
 for idx, row in df.iterrows():
     folium.Marker(
         location=[row['lat'], row['lon']],
@@ -92,19 +91,37 @@ for idx, row in df.iterrows():
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(m)
 
-# 4. 지도 화면 출력
+# 4. 지도 화면 출력 및 클릭 이벤트 수집
 st.subheader("📍 서울 관광지 지도")
-st_folium(m, width="100%", height=500)
+map_data = st_folium(m, width="100%", height=500)
 
-# 5. 지도 하단 관광지 목록 및 간략 설명
+# 5. 클릭한 마커 감지 및 설명 표시
 st.markdown("---")
-st.subheader("📜 TOP 10 관광지 명소 설명")
+st.subheader("🔍 선택한 관광지 상세 정보")
 
-# 2열 카드로 깔끔하게 구성
+# 클릭된 마커의 tooltip 값 가져오기
+clicked_spot_name = map_data.get("last_object_clicked_tooltip")
+
+if clicked_spot_name:
+    # 클릭한 장소의 정보 찾기
+    selected_info = df[df['name'] == clicked_spot_name]
+    
+    if not selected_info.empty:
+        spot_data = selected_info.iloc[0]
+        st.success(f"📌 **{spot_data['name']}**")
+        st.info(spot_data['desc'])
+    else:
+        st.write("지도 위 마커를 클릭하면 해당 명소의 설명이 여기에 표시됩니다.")
+else:
+    st.write("지도 위 마커를 클릭해보세요!")
+
+# 6. 전체 TOP 10 목록 (참고용 하단 표출)
+st.markdown("---")
+st.subheader("📜 TOP 10 전체 명소 목록")
+
 col1, col2 = st.columns(2)
-
 for i, spot in enumerate(tourist_spots):
     target_col = col1 if i % 2 == 0 else col2
     with target_col:
-        with st.expander(f"{i+1}. {spot['name']}", expanded=True):
+        with st.expander(f"{i+1}. {spot['name']}"):
             st.write(spot['desc'])
