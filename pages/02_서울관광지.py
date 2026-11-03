@@ -5,7 +5,7 @@ from streamlit_folium import st_folium
 
 # 1. 페이지 기본 설정
 st.set_page_config(
-    page_title="서울 TOP 10 관광지 & 1박 2일 일정 플래너",
+    page_title="서울 TOP 10 관광지 & 맛집/교통 1박 2일 플래너",
     page_icon="🗽",
     layout="wide"
 )
@@ -17,8 +17,8 @@ if "day1_plan" not in st.session_state:
 if "day2_plan" not in st.session_state:
     st.session_state["day2_plan"] = ["명동 쇼핑가", "동대문디자인플라자 (DDP)", "홍대 거리", "반포 한강공원"]
 
-st.title("🗽 외국인 인기 서울 명소 TOP 10 & 1박 2일 추천 일정")
-st.write("지도 위의 마커를 클릭하여 장소 정보를 확인하고, 나만의 1박 2일 여행 일정을 완성해 보세요!")
+st.title("🗽 외국인 인기 서울 명소 TOP 10 & 1박 2일 맞춤 플래너")
+st.write("지도 위의 마커를 클릭해 상세 정보를 확인하고, 맛집과 교통편이 포함된 완벽한 일정을 확인해 보세요!")
 
 # 3. 관광지 데이터 (위도, 경도, 설명 포함)
 tourist_spots = [
@@ -128,9 +128,9 @@ if clicked_spot_name:
 else:
     st.info("💡 **팁:** 지도 위의 빨간 마커를 클릭하면 해당 장소의 설명과 1박 2일 일정 추가 버튼이 나타납니다.")
 
-# 7. 지도 하단 1박 2일 추천 코스
+# 7. 지도 하단 1박 2일 추천 코스 + 맛집 및 교통편 가이드
 st.markdown("---")
-st.subheader("🗓️ 1박 2일 추천 여행 일정표")
+st.subheader("🗓️ 맛집 & 교통 가이드가 포함된 1박 2일 추천 여행 일정표")
 
 col_d1, col_d2 = st.columns(2)
 
@@ -143,6 +143,17 @@ with col_d1:
         desc_text = spot_match.iloc[0]['desc'] if not spot_match.empty else ""
         with st.expander(f"📍 {idx + 1}단계: {name}", expanded=True):
             st.write(desc_text)
+            
+    # Day 1 맛집 및 교통 정보 추가
+    st.markdown("---")
+    st.markdown("#### 🍴 Day 1 추천 맛집 & 교통편")
+    st.info(
+        "**🚇 교통편 가이드:**\n"
+        "- 공항철도 및 지하철 3호선(안국역, 경복궁역) 활용 추천 (T-money 카드 필수)\n\n"
+        "**🍜 추천 맛집:**\n"
+        "- **토속촌 삼계탕 (경복궁 인근):** 외국인 관광객에게 가장 유명한 보양식 맛집\n"
+        "- **명동교자 (명동 인근):** 미슐랭 가이드에 오른 칼국수와 마늘 김치 맛집"
+    )
             
     if st.button("🗑️ Day 1 일정 초기화"):
         st.session_state["day1_plan"] = []
@@ -157,6 +168,17 @@ with col_d2:
         desc_text = spot_match.iloc[0]['desc'] if not spot_match.empty else ""
         with st.expander(f"📍 {idx + 1}단계: {name}", expanded=True):
             st.write(desc_text)
+            
+    # Day 2 맛집 및 교통 정보 추가
+    st.markdown("---")
+    st.markdown("#### 🍴 Day 2 추천 맛집 & 교통편")
+    st.info(
+        "**🚇 교통편 가이드:**\n"
+        "- 지하철 2호선(홍대입구역, 잠실역) 및 9호선 라인 중심 이동 편리\n\n"
+        "**🍜 추천 맛집:**\n"
+        "- **광장시장 (동대문/종로 인근):** 빈대떡, 마약김밥 등 다양한 길거리 K-푸드 체험\n"
+        "- **한강 편의점 라면 & 배달 치킨 (반포 한강공원):** 현지인처럼 즐기는 한강 야외 피크닉 낭만"
+    )
             
     if st.button("🗑️ Day 2 일정 초기화"):
         st.session_state["day2_plan"] = []
