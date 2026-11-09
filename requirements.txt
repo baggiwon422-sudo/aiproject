@@ -2,3 +2,6 @@ streamlit
 folium
 streamlit-folium
 pandas
+matplotlib
+seaborn
+numpy
