@@ -154,7 +154,7 @@ if analysis_mode == "1. 특정 구 연령별 인구 추이 (꺾은선 그래프)
       plt.xticks(rotation=30)
       plt.tight_layout()
       st.pyplot(fig)
-      plt.close(fig)  # 메모리 정리
+      plt.close(fig)
 
     with res_col2:
       st.markdown("### 📋 상세 데이터 요약")
@@ -183,7 +183,6 @@ else:
   st.markdown("---")
 
   try:
-    # 컬럼 이름 조합 완성
     if selected_gender == "전체":
       target_col = f"{selected_year}_거주자_{selected_age}"
     elif selected_gender == "남성":
@@ -191,14 +190,12 @@ else:
     else:
       target_col = f"{selected_year}_여_거주자_{selected_age}"
 
-    # 디버깅 체크: 컬럼이 존재하는지 확인
     if target_col not in df.columns:
       st.error(
           f"데이터에서 컬럼을 찾을 수 없습니다: {target_col}. 파일 형식을"
           " 확인해주세요."
       )
     else:
-      # 서울시 전체(첫 번째 행)를 제외한 자치구 데이터만 추출 후 정렬
       dist_df = df.iloc[1:].copy()
       dist_df["인구수"] = (
           dist_df[target_col].astype(str).str.replace(",", "").astype(int)
@@ -215,4 +212,44 @@ else:
 
         fig, ax = plt.subplots(figsize=(11, 6))
 
-        # 성별에 따른 막대 색상 지정 (남성: 핑크, 여성
+        if selected_gender == "전체":
+          bar_color = "#1f77b4"
+        elif selected_gender == "남성":
+          bar_color = "#ff69b4"  # 핑크
+        else:
+          bar_color = "#228b22"  # 초록
+
+        ax.bar(
+            dist_df["행정구역"].apply(lambda x: x.split()[1]),
+            dist_df["인구수"],
+            color=bar_color,
+            alpha=0.85,
+        )
+
+        ax.set_title(
+            f"{selected_year}년 {selected_age} 자치구별 인구 현황",
+            fontsize=14,
+            pad=15,
+        )
+        ax.set_xlabel("자치구", fontsize=11)
+        ax.set_ylabel("인구수 (명)", fontsize=11)
+
+        ax.yaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}명"))
+        ax.grid(True, axis="y", linestyle="--", alpha=0.6)
+
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close(fig)
+
+      with res_col2:
+        st.markdown("### 📋 자치구별 순위표")
+        rank_df = dist_df[["행정구역", "인구수"]].copy()
+        rank_df["행정구역"] = rank_df["행정구역"].apply(lambda x: x.split()[1])
+        rank_df["인구수"] = rank_df["인구수"].apply(lambda x: f"{x:,} 명")
+        rank_df.reset_index(drop=True, inplace=True)
+        rank_df.index = rank_df.index + 1
+        st.dataframe(rank_df, use_container_width=True)
+
+  except Exception as e:
+    st.error(f"막대그래프를 그리는 중 오류가 발생했습니다: {e}")
