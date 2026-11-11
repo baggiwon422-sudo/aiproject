@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
@@ -12,11 +13,22 @@ plt.rcParams["font.family"] = "NanumGothic"
 plt.rcParams["axes.unicode_minus"] = False
 
 
-# 데이터 로드 함수 (상위 폴더의 population.csv 경로 지정)
+# 데이터 로드 함수 (어디서 실행되든 안전하게 파일을 찾는 방식)
 @st.cache_data
 def load_data():
-  # pages 폴더의 상위 디렉터리(../)에 있는 population.csv를 지정합니다.
-  df = pd.read_csv("../population.csv", encoding="cp949")
+  # 현재 실행 중인 py 파일의 폴더 경로 기준
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+
+  # 1. 상위 폴더(루트)에 있는 경우 시도 (pages/ 에 있을 때)
+  csv_path = os.path.join(script_dir, "..", "population.csv")
+  if not os.path.exists(csv_path):
+    # 2. 같은 폴더에 있는 경우 시도
+    csv_path = os.path.join(script_dir, "population.csv")
+  if not os.path.exists(csv_path):
+    # 3. 현재 작업 디렉토리 기준 시도
+    csv_path = "population.csv"
+
+  df = pd.read_csv(csv_path, encoding="cp949")
   return df
 
 
@@ -25,7 +37,7 @@ try:
 except Exception as e:
   st.error(
       "데이터 파일을 불러오는 중 오류가 발생했습니다. 프로젝트 루트 폴더에"
-      " 'population.csv' 파일이 있는지 확인해주세요.\n오류"
+      " 'population.csv' 파일이 존재하는지 확인해주세요.\n오류"
       f" 내용: {e}"
   )
   st.stop()
@@ -120,7 +132,7 @@ with col1:
   ax.set_xlabel("나이 구간", fontsize=11)
   ax.set_ylabel("인구수 (명)", fontsize=11)
 
-  # 세로축 콤마 포맷 및 격자선(Grid) 설정
+  # 세로축 콤마 포맷 및 1,000명 단위 격자선(Grid) 설정
   from matplotlib.ticker import StrMethodFormatter
 
   ax.yaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}명"))
