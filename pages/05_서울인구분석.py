@@ -40,18 +40,11 @@ except Exception as e:
 
 # 제목 및 설명
 st.title("📊 서울시 자치구별·연도별 연령별 인구수 시각화")
+st.markdown("---")
 
-# 사이드바 설정 (사용자 입력)
-st.sidebar.header("🔍 분석 메뉴 선택")
-menu = st.sidebar.radio(
-    "원하는 분석을 선택하세요",
-    ["1. 특정 구 연령별 인구 추이", "2. 연령대별 자치구 순위 비교"],
-)
-
+# 공통 옵션 리스트
 years = ["2020년", "2021년", "2022년", "2023년", "2024년", "2025년"]
 gender_options = ["전체", "남성", "여성"]
-
-# 공통 연령대 목록 정의 (0~9세부터 90~99세, 100세 이상)
 age_brackets = [
     "0~9세",
     "10~19세",
@@ -65,17 +58,33 @@ age_brackets = [
     "90~99세",
     "100세 이상",
 ]
+districts = df["행정구역"].tolist()
 
+# 메인 화면에서 분석 모드 선택 (라디오 버튼)
+analysis_mode = st.radio(
+    "🎯 **원하시는 분석 방식을 선택하세요**",
+    ["1. 특정 구 연령별 인구 추이 (꺾은선 그래프)", "2. 연령대별 자치구 순위 비교 (막대그래프)"],
+    horizontal=True,
+)
+
+st.markdown("")
 
 # ==========================================
-# 메뉴 1: 기존 꺾은선 그래프 (성별 색상 변경 반영)
+# 모드 1: 특정 구 연령별 인구 추이 (본문 선택형)
 # ==========================================
-if menu == "1. 특정 구 연령별 인구 추이":
-  st.sidebar.subheader("조회 옵션")
-  districts = df["행정구역"].tolist()
-  selected_district = st.sidebar.selectbox("행정구역 선택", districts)
-  selected_year = st.sidebar.selectbox("연도 선택", years)
-  selected_gender = st.sidebar.selectbox("성별 선택", gender_options)
+if analysis_mode == "1. 특정 구 연령별 인구 추이 (꺾은선 그래프)":
+  st.subheader("📌 조회 조건 선택")
+
+  # 본문 내 3개 컬럼으로 나누어 나란히 배치
+  c1, c2, c3 = st.columns(3)
+  with c1:
+    selected_district = st.selectbox("행정구역 선택", districts, key="m1_dist")
+  with c2:
+    selected_year = st.selectbox("연도 선택", years, key="m1_year")
+  with c3:
+    selected_gender = st.selectbox("성별 선택", gender_options, key="m1_gender")
+
+  st.markdown("---")
 
   # 데이터 추출 및 가공
   row_data = df[df["행정구역"] == selected_district].iloc[0]
@@ -103,11 +112,12 @@ if menu == "1. 특정 구 연령별 인구 추이":
 
   chart_df = pd.DataFrame({"나이": age_labels, "인구수": population_values})
 
-  col1, col2 = st.columns([2, 1])
+  # 결과 출력 레이아웃
+  res_col1, res_col2 = st.columns([2, 1])
 
-  with col1:
-    st.subheader(
-        f"📍 {selected_district} ({selected_year} / {selected_gender})"
+  with res_col1:
+    st.markdown(
+        f"### 📍 {selected_district} ({selected_year} / {selected_gender})"
     )
 
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -144,27 +154,31 @@ if menu == "1. 특정 구 연령별 인구 추이":
     plt.tight_layout()
     st.pyplot(fig)
 
-  with col2:
-    st.subheader("📋 상세 데이터 요약")
+  with res_col2:
+    st.markdown("### 📋 상세 데이터 요약")
     display_df = chart_df.copy()
     display_df["인구수"] = display_df["인구수"].apply(lambda x: f"{x:,} 명")
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 
 # ==========================================
-# 메뉴 2: 10살 단위 나이대별 가장 인구가 많은 구 순위 막대그래프
+# 모드 2: 연령대별 자치구 순위 비교 (본문 선택형)
 # ==========================================
 else:
-  st.sidebar.subheader("조회 옵션")
-  selected_year = st.sidebar.selectbox("연도 선택", years, key="m2_year")
-  selected_gender = st.sidebar.selectbox(
-      "성별 선택", gender_options, key="m2_gender"
-  )
-  selected_age = st.sidebar.selectbox(
-      "연령대 선택", age_brackets, key="m2_age"
-  )
+  st.subheader("📌 조회 조건 선택")
 
-  # 컬럼 이름 조합 완성 (예: 2025년_거주자_20~29세)
+  # 본문 내 3개 컬럼으로 나누어 나란히 배치
+  c1, c2, c3 = st.columns(3)
+  with c1:
+    selected_year = st.selectbox("연도 선택", years, key="m2_year")
+  with c2:
+    selected_gender = st.selectbox("성별 선택", gender_options, key="m2_gender")
+  with c3:
+    selected_age = st.selectbox("연령대 선택", age_brackets, key="m2_age")
+
+  st.markdown("---")
+
+  # 컬럼 이름 조합 완성
   if selected_gender == "전체":
     target_col = f"{selected_year}_거주자_{selected_age}"
   elif selected_gender == "남성":
@@ -172,63 +186,22 @@ else:
   else:
     target_col = f"{selected_year}_여_거주자_{selected_age}"
 
-  # 서울시 전체(첫 번째 행)를 제외한 자치구 데이터만 추출
+  # 서울시 전체(첫 번째 행)를 제외한 자치구 데이터만 추출 후 정렬
   dist_df = df.iloc[1:].copy()
-
-  # 인구수 데이터를 숫자로 변환
   dist_df["인구수"] = (
       dist_df[target_col].astype(str).str.replace(",", "").astype(int)
   )
-
-  # 인구수 기준 내림차순 정렬 (많은 구 순서대로)
   dist_df = dist_df.sort_values(by="인구수", ascending=False)
 
-  col1, col2 = st.columns([2, 1])
+  # 결과 출력 레이아웃
+  res_col1, res_col2 = st.columns([2, 1])
 
-  with col1:
-    st.subheader(
-        f"🏆 {selected_year} {selected_gender} '{selected_age}' 인구 상위"
+  with res_col1:
+    st.markdown(
+        f"### 🏆 {selected_year} {selected_gender} '{selected_age}' 인구 상위"
         " 자치구 순위"
     )
 
     fig, ax = plt.subplots(figsize=(11, 6))
 
-    # 성별에 따른 막대 색상 지정 (남성: 핑크, 여성: 초록, 전체: 파랑)
-    if selected_gender == "전체":
-      bar_color = "#1f77b4"
-    elif selected_gender == "남성":
-      bar_color = "#ff69b4"  # 핑크
-    else:
-      bar_color = "#228b22"  # 초록
-
-    bars = ax.bar(
-        dist_df["행정구역"].apply(lambda x: x.split()[1]),
-        dist_df["인구수"],
-        color=bar_color,
-        alpha=0.85,
-    )
-
-    ax.set_title(
-        f"{selected_year}년 {selected_age} 자치구별 인구 현황",
-        fontsize=14,
-        pad=15,
-    )
-    ax.set_xlabel("자치구", fontsize=11)
-    ax.set_ylabel("인구수 (명)", fontsize=11)
-
-    ax.yaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}명"))
-    ax.grid(True, axis="y", linestyle="--", alpha=0.6)
-
-    # 구 이름이 겹치지 않도록 회전
-    plt.xticks(rotation=45, ha="right")
-    plt.tight_layout()
-    st.pyplot(fig)
-
-  with col2:
-    st.subheader("📋 자치구별 순위표")
-    rank_df = dist_df[["행정구역", "인구수"]].copy()
-    rank_df["행정구역"] = rank_df["행정구역"].apply(lambda x: x.split()[1])
-    rank_df["인구수"] = rank_df["인구수"].apply(lambda x: f"{x:,} 명")
-    rank_df.reset_index(drop=True, inplace=True)
-    rank_df.index = rank_df.index + 1  # 순위를 1부터 시작하게
-    st.dataframe(rank_df, use_container_width=True)
+    # 성별에 따른 막대 색상 지정 (
