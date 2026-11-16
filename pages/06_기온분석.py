@@ -48,76 +48,103 @@ except FileNotFoundError:
     st.error("같은 폴더에 'temperature.csv' 파일이 있는지 확인해주세요.")
     st.stop()
 
-# 사이드바 메뉴 설정
-st.sidebar.title("🔍 분석 메뉴")
-menu = st.sidebar.selectbox(
-    "원하는 분석을 선택하세요",
+st.title("🌡️ 서울 기상 관측 데이터 분석 대시보드")
+
+# ==========================================
+# 본문 상단: 분석 메뉴 선택창
+# ==========================================
+menu = st.selectbox(
+    "🔍 원하는 분석 메뉴를 선택하세요",
     [
-        "1. 월별 평균기온 (1~12월)",
-        "2. 특정 연도 최고/최저기온",
-        "3. 두 개 연도 기온 비교",
+        "1. 특정 월의 연도별 최고/최저기온 추이",
+        "2. 서울 월별 평균기온 (1~12월)",
+        "3. 특정 연도의 월별 최고/최저기온",
+        "4. 두 개 연도 월별 평균기온 비교",
     ],
 )
 
-st.title("🌡️ 서울 기상 관측 데이터 분석 대시보드")
 st.markdown("---")
 
 all_years = sorted(df["년도"].unique())
 
 # ==========================================
-# 기능 1: 월별 평균기온 (1~12월)
+# 기능 1: 특정 월 선택 -> 연도별 최고/최저기온 그래프
 # ==========================================
-if menu == "1. 월별 평균기온 (1~12월)":
-    st.subheader("📊 서울 월별 평균기온 분석 (전체 연도 평균)")
+if menu == "1. 특정 월의 연도별 최고/최저기온 추이":
+    st.subheader("📈 월별 기온분석 (연도별 최고·최저기온)")
+
+    selected_month = st.selectbox(
+        "📅 분석할 월을 선택하세요",
+        options=list(range(1, 13)),
+        format_func=lambda x: f"{x}월",
+        index=7,
+    )
+
+    filtered_df = df[df["월"] == selected_month].dropna(subset=["최고기온(℃)", "최저기온(℃)"])
+
+    chart_data = filtered_df.set_index("년도")[["최고기온(℃)", "최저기온(℃)"]]
+    chart_data.columns = ["최고기온", "최저기온"]
+
+    st.line_chart(chart_data, color=["#FF4B4B", "#1C83E1"])
+
+    with st.expander(f"{selected_month}월 상세 데이터 보기"):
+        st.dataframe(
+            filtered_df[["년도", "월", "평균기온(℃)", "최고기온(℃)", "최저기온(℃)"]].reset_index(drop=True),
+            use_container_width=True,
+        )
+
+
+# ==========================================
+# 기능 2: 가로축 1~12월, 서울 월별 평균기온 그래프
+# ==========================================
+elif menu == "2. 서울 월별 평균기온 (1~12월)":
+    st.subheader("📊 서울 월별 평균기온 분석 (1월 ~ 12월)")
 
     monthly_avg = df.groupby("월")["평균기온(℃)"].mean().reset_index()
     monthly_avg.columns = ["월", "평균기온"]
-    monthly_avg["월_표시"] = monthly_avg["월"].apply(lambda x: f"{x}월")
+    monthly_avg["월_표시"] = monthly_avg["월"].apply(lambda x: f"{x:02d}월")
 
     chart_data = monthly_avg.set_index("월_표시")[["평균기온"]]
 
     st.line_chart(chart_data, color=["#FF7F0E"])
-    st.markdown("💡 1월부터 12월까지 전체 관측 기간 동안의 월별 평균기온 흐름입니다.")
 
     with st.expander("상세 데이터 보기"):
         st.dataframe(monthly_avg[["월", "평균기온"]].reset_index(drop=True), use_container_width=True)
 
 
 # ==========================================
-# 기능 2: 특정 연도 최고/최저기온 (본문 선택형)
+# 기능 3: 연도 1개 선택 -> 해당 연도 최고/최저기온 그래프
 # ==========================================
-elif menu == "2. 특정 연도 최고/최저기온":
+elif menu == "3. 특정 연도의 월별 최고/최저기온":
     st.subheader("📈 특정 연도 월별 최고 및 최저기온 추이")
 
-    # 본문(메인 화면)에서 연도 선택
     selected_year = st.selectbox(
-        "📅 분석할 연도를 선택하세요 (본문 선택)",
+        "📅 분석할 연도를 선택하세요",
         options=all_years,
         index=len(all_years) - 1,
     )
 
-    year_df = df[df["년도"] == selected_year].sort_values("월")
+    year_df = df[df["년도"] == selected_year].sort_values("월").copy()
+    year_df["월_표시"] = year_df["월"].apply(lambda x: f"{x:02d}월")
 
-    if year_df.empty:
-        st.warning("선택한 연도에 데이터가 없습니다.")
-    else:
-        chart_data = year_df.set_index("월")[["최고기온(℃)", "최저기온(℃)"]]
-        chart_data.columns = ["최고기온", "최저기온"]
+    chart_data = year_df.set_index("월_표시")[["최고기온(℃)", "최저기온(℃)"]]
+    chart_data.columns = ["최고기온", "최저기온"]
 
-        st.markdown(f"### 🗓️ {selected_year}년 월별 기온 변화")
-        st.line_chart(chart_data, color=["#FF4B4B", "#1C83E1"])
+    st.line_chart(chart_data, color=["#FF4B4B", "#1C83E1"])
 
-        with st.expander(f"{selected_year}년 상세 데이터 보기"):
-            st.dataframe(year_df[["월", "평균기온(℃)", "최고기온(℃)", "최저기온(℃)"]].reset_index(drop=True), use_container_width=True)
+    with st.expander(f"{selected_year}년 상세 데이터 보기"):
+        st.dataframe(
+            year_df[["월", "평균기온(℃)", "최고기온(℃)", "최저기온(℃)"]].reset_index(drop=True),
+            use_container_width=True,
+        )
 
 
 # ==========================================
-# 기능 3: 두 개 연도 기온 비교 (본문 선택형)
+# 기능 4: 연도 2개 선택 -> 2개 연도 비교 그래프
 # ==========================================
-elif menu == "3. 두 개 연도 기온 비교":
+elif menu == "4. 두 개 연도 월별 평균기온 비교":
     st.subheader("⚖️ 두 개 연도 평균기온 비교 분석")
 
-    # 본문(메인 화면)에서 2개의 연도 선택
     col_y1, col_y2 = st.columns(2)
     with col_y1:
         year1 = st.selectbox(
@@ -136,12 +163,4 @@ elif menu == "3. 두 개 연도 기온 비교":
     df_y2 = df[df["년도"] == year2][["월", "평균기온(℃)"]].rename(columns={"평균기온(℃)": f"{year2}년"})
 
     comparison_df = pd.merge(df_y1, df_y2, on="월", how="outer").sort_values("월")
-    comparison_df["월_표시"] = comparison_df["월"].apply(lambda x: f"{x}월")
-
-    chart_data = comparison_df.set_index("월_표시")[[f"{year1}년", f"{year2}년"]]
-
-    st.markdown(f"### 📊 {year1}년 vs {year2}년 월별 평균기온 비교")
-    st.line_chart(chart_data, color=["#2ca02c", "#d62728"])
-
-    with st.expander("비교 상세 데이터 보기"):
-        st.dataframe(comparison_df[["월", f"{year1}년", f"{year2}년"]].reset_index(drop=True), use_container_width=True)
+    comparison_df["월_표시"] = comparison_df["월"].apply(lambda x: f"{x:
