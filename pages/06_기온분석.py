@@ -163,4 +163,14 @@ elif menu == "4. 두 개 연도 월별 평균기온 비교":
     df_y2 = df[df["년도"] == year2][["월", "평균기온(℃)"]].rename(columns={"평균기온(℃)": f"{year2}년"})
 
     comparison_df = pd.merge(df_y1, df_y2, on="월", how="outer").sort_values("월")
-    comparison_df["월_표시"] = comparison_df["월"].apply(lambda x: f"{x:
+    comparison_df["월_표시"] = comparison_df["월"].apply(lambda x: f"{x:02d}월")
+
+    chart_data = comparison_df.set_index("월_표시")[[f"{year1}년", f"{year2}년"]]
+
+    st.line_chart(chart_data, color=["#2ca02c", "#d62728"])
+
+    with st.expander("비교 상세 데이터 보기"):
+        st.dataframe(
+            comparison_df[["월", f"{year1}년", f"{year2}년"]].reset_index(drop=True),
+            use_container_width=True,
+        )
