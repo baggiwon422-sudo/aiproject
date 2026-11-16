@@ -1,59 +1,10 @@
-import os
-import platform
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 import streamlit as st
 
 st.set_page_config(page_title="월별 기온 분석", layout="wide")
 
 
-# 1. 한글 폰트 직접 로드 (FontProperties 객체 반환 -> "가가가가" 현상 원천 차단)
-def get_korean_font() -> fm.FontProperties | None:
-    system_name = platform.system()
-
-    # OS별 기본 한글 폰트 경로 후보
-    if system_name == "Windows":
-        font_candidates = [
-            "C:/Windows/Fonts/malgun.ttf",
-            "C:/Windows/Fonts/NanumGothic.ttf",
-            "C:/Windows/Fonts/gulim.ttc",
-        ]
-    elif system_name == "Darwin":  # macOS
-        font_candidates = [
-            "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-            "/Library/Fonts/AppleGothic.ttf",
-            "/Library/Fonts/NanumGothic.ttf",
-        ]
-    else:  # Linux / Streamlit Cloud
-        font_candidates = [
-            "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-            "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf",
-        ]
-
-    # 후보 경로 중 실제 존재하는 파일 사용
-    for path in font_candidates:
-        if os.path.exists(path):
-            fm.fontManager.addfont(path)
-            prop = fm.FontProperties(fname=path)
-            plt.rcParams["font.family"] = prop.get_name()
-            plt.rcParams["axes.unicode_minus"] = False
-            return prop
-
-    # 경로에 없으면 koreanize_matplotlib 폴백 시도
-    try:
-        import koreanize_matplotlib  # noqa: F401
-        plt.rcParams["axes.unicode_minus"] = False
-    except ImportError:
-        pass
-
-    return None
-
-
-font_prop = get_korean_font()
-
-
-# 2. 데이터 로드 및 전처리
+# 1. 데이터 로드 및 전처리
 @st.cache_data
 def load_data(file_path: str) -> pd.DataFrame:
     df = None
@@ -91,8 +42,8 @@ def load_data(file_path: str) -> pd.DataFrame:
     return df
 
 
-# 3. 메인 UI
-st.title("🌡️ 기상 관측 데이터 분석 대시보드")
+# 2. 메인 UI
+st.title("🌡️ 월별 기온분석 대시보드")
 
 try:
     df = load_data("temperature.csv")
@@ -100,16 +51,19 @@ except FileNotFoundError:
     st.error("같은 폴더에 'temperature.csv' 파일이 있는지 확인해주세요.")
     st.stop()
 
+# 사이드바에서 월 선택
 st.sidebar.header("검색 조건 설정")
 selected_month = st.sidebar.selectbox(
     "분석할 월을 선택하세요",
     options=list(range(1, 13)),
     format_func=lambda x: f"{x}월",
-    index=7,
+    index=7,  # 기본값: 8월
 )
 
+# 선택한 월 데이터 필터링 및 필요한 컬럼만 추출
 filtered_df = df[df["월"] == selected_month].dropna(subset=["최고기온(℃)", "최저기온(℃)"])
 
+# 요약 지표 표시
 col1, col2, col3 = st.columns(3)
 col1.metric("선택한 월", f"{selected_month}월")
 col2.metric(
@@ -123,43 +77,18 @@ col3.metric(
     f"{int(filtered_df.loc[filtered_df['최저기온(℃)'].idxmin(), '년도'])}년",
 )
 
-# 4. 꺾은선 그래프 그리기 (모든 텍스트에 fontproperties 직접 적용)
-fig, ax = plt.subplots(figsize=(12, 5))
+st.markdown("---")
+st.subheader(f"📈 월별 기온분석 ({selected_month}월)")
 
-ax.plot(
-    filtered_df["년도"],
-    filtered_df["최고기온(℃)"],
-    color="red",
-    marker="o",
-    markersize=3,
-    linewidth=1.5,
-    label="최고기온",
-)
-ax.plot(
-    filtered_df["년도"],
-    filtered_df["최저기온(℃)"],
-    color="blue",
-    marker="o",
-    markersize=3,
-    linewidth=1.5,
-    label="최저기온",
-)
+# 3. Streamlit 내장 꺾은선 그래프용 데이터프레임 가공
+# 인덱스를 '년도'로 설정하고 최고기온, 최저기온만 남김
+chart_data = filtered_df.set_index("년도")[["최고기온(℃)", "최저기온(℃)"]]
+chart_data.columns = ["최고기온", "최저기온"]  # 범례 이름
 
-# 제목, 축 라벨, 범례에 font_prop 직접 지정
-if font_prop is not None:
-    ax.set_title("월별 기온분석", fontproperties=font_prop, fontsize=16, fontweight="bold", pad=15)
-    ax.set_xlabel("년도", fontproperties=font_prop, fontsize=12)
-    ax.set_ylabel("온도 (℃)", fontproperties=font_prop, fontsize=12)
-    ax.legend(prop=font_prop, loc="best", frameon=True)
-else:
-    ax.set_title("월별 기온분석", fontsize=16, fontweight="bold", pad=15)
-    ax.set_xlabel("년도", fontsize=12)
-    ax.set_ylabel("온도 (℃)", fontsize=12)
-    ax.legend(loc="best", fontsize=11, frameon=True)
+# Streamlit 내장 차트 출력 (빨강/파랑 색상 지정은 불가하지만 한글이 절대 안 깨짐)
+st.line_chart(chart_data, color=["#FF4B4B", "#1C83E1"])
 
-ax.grid(True, linestyle="--", alpha=0.5)
-st.pyplot(fig)
-
+# 상세 데이터 표
 with st.expander(f"{selected_month}월 상세 데이터 보기"):
     st.dataframe(
         filtered_df[["년도", "월", "평균기온(℃)", "최고기온(℃)", "최저기온(℃)"]].reset_index(drop=True),
