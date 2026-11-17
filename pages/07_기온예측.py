@@ -209,4 +209,104 @@ for name, info in models_info.items():
         x=years_flat[past_mask],
         y=info["pred_grid"][past_mask],
         mode="lines",
-        line
+        line=dict(color=info["color"], width=line_width),
+        opacity=line_opacity,
+        name=f"{info['short_name']} - 학습선",
+        hovertemplate=f"<b>%{{x}}년</b><br>{info['short_name']} 예측: %{{y:.2f}}℃<extra></extra>"
+    ))
+
+    # 미래 예측 연장 구간 선 (점선)
+    if target_year > last_year:
+        fig.add_trace(go.Scatter(
+            x=years_flat[future_mask],
+            y=info["pred_grid"][future_mask],
+            mode="lines",
+            line=dict(color=info["color"], width=line_width, dash="dash"),
+            opacity=line_opacity,
+            name=f"{info['short_name']} - 미래 연장",
+            hovertemplate=f"<b>%{{x}}년</b><br>{info['short_name']} 미래예측: %{{y:.2f}}℃<extra></extra>"
+        ))
+
+    # 목표 연도 예측 별표 마커
+    fig.add_trace(go.Scatter(
+        x=[target_year],
+        y=[info["pred_target"]],
+        mode="markers+text" if is_main else "markers",
+        marker=dict(
+            size=15 if is_main else 10,
+            color=info["color"],
+            symbol="star" if is_main else "diamond",
+            line=dict(color="black", width=1)
+        ),
+        text=[f"  {info['short_name']}: {info['pred_target']:.2f}℃"] if is_main else None,
+        textposition="top center",
+        textfont=dict(size=13, color=info["color"], family="Arial Black"),
+        name=f"{target_year}년 {info['short_name']} 결과",
+        hovertemplate=f"<b>{target_year}년 {info['short_name']}</b><br>예측 기온: {info['pred_target']:.2f}℃<extra></extra>"
+    ))
+
+# 현재 관측 데이터 마지막 연도 수직 안내선
+fig.add_vline(
+    x=last_year,
+    line_width=1.5,
+    line_dash="dot",
+    line_color="gray",
+    annotation_text=f"관측 데이터 종료 ({last_year}년)",
+    annotation_position="top left"
+)
+
+fig.update_layout(
+    title=f"<b>{selected_month}월 역대 평균기온 및 3가지 알고리즘 예측 비교 ({target_year}년)</b>",
+    xaxis_title="연도 (Year)",
+    yaxis_title="평균기온 (℃)",
+    hovermode="closest",
+    height=580,
+    template="plotly_white",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# 6. 그래프 하단: 3가지 알고리즘 한눈에 비교하기
+st.divider()
+st.subheader("📊 3가지 머신러닝 알고리즘 차이점 한눈에 비교하기")
+
+comparison_data = {
+    "구분": [
+        "1. 선의 모양 (작동 원리)",
+        "2. 비유하자면?",
+        "3. 미래 예측 방식",
+        "4. 장점",
+        "5. 단점 (주의할 점)"
+    ],
+    "🔴 선형회귀 (Linear Regression)": [
+        "반듯한 일직선 (1차 함수)",
+        "데이터 한가운데를 관통하는 '평균 화살표'",
+        "과거에 매년 오르던 기울기 그대로 끝없이 직진",
+        "전체적인 장기 상승/하락 추세를 가장 직관적으로 보여줌",
+        "기온이 갈수록 더 가파르게 오르는 가속 현상은 반영 못 함"
+    ],
+    "🟢 다항회귀 (Polynomial Regression)": [
+        "부드럽게 휘어지는 곡선 (2차 함수)",
+        "최근 변화 속도까지 반영해 휘어지는 '커브 길'",
+        "최근 온난화 가속(휘어짐)을 반영해 곡선으로 뻗어나감",
+        "최근 들어 기온이 더 빠르게 오르는 비선형 추세를 잘 잡음",
+        "너무 먼 미래(예: 100년 뒤)를 예측하면 곡선이 과도하게 치솟을 수 있음"
+    ],
+    "🟣 의사결정나무 (Decision Tree)": [
+        "수평선과 수직선이 반복되는 계단 모양",
+        "'1950년 이전인가? 2000년 이후인가?' 스무고개 구간 나누기",
+        "가장 마지막 구간(최근 시대)의 평균 기온을 미래에도 그대로 유지",
+        "시대별 기온 단계(평균 수준)가 어떻게 변했는지 한눈에 파악 가능",
+        "과거 데이터 범위를 벗어난 미래(외삽)에서는 새로운 추세를 만들지 못하고 수평선만 그림"
+    ]
+}
+
+st.table(pd.DataFrame(comparison_data))
+
+# 현재 선택된 알고리즘 심층 해설 박스
+st.info(f"""
+**💡 현재 선택하신 [{selected_algo}] 관전 포인트:**
+* 그래프에서 **점선(미래 연장선)** 부분을 유심히 보세요!
+* **선형회귀(빨강)**는 일정한 각도로 쭉 올라가고, **다항회귀(초록)**는 최근 가팔라진 추세를 따라 더 가파른 곡선으로 올라가며, **의사결정나무(보라)**는 미래 연도를 입력해도 마지막 구간의 평균값인 **평평한 수평선**으로 예측합니다.
+""")
