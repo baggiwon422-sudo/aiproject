@@ -1,3 +1,4 @@
+import platform
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,10 +12,24 @@ st.set_page_config(
     page_title="Iris 품종 예측 앱", page_icon="🌸", layout="centered"
 )
 
+# --- 폰트 깨짐 방지 설정 ---
+if platform.system() == "Darwin":  # Mac
+  plt.rc("font", family="AppleGothic")
+elif platform.system() == "Windows":  # Windows
+  plt.rc("font", family="Malgun Gothic")
+else:  # Linux (Streamlit Cloud 등)
+  # 나눔고딕 또는 시스템 기본 한글 폰트 적용 시도
+  plt.rc("font", family="NanumGothic")
+
+# 마이너스 기호 깨짐 방지
+plt.rcParams["axes.unicode_minus"] = False
+# -------------------------
+
 st.title("🌸 붓꽃(Iris) 품종 예측 및 시각화 앱")
 st.write(
     "아래의 슬라이더를 조절하여 **꽃잎 길이**와 **꽃잎 너비**를 입력하고 품종을 예측해 보세요!"
 )
+
 
 # 2. 데이터 로드 및 모델 학습 (캐싱 활용)
 @st.cache_data
@@ -64,7 +79,7 @@ input_data = pd.DataFrame(
 prediction = model.predict(input_data)[0]
 predicted_species = target_names[prediction]
 
-# 5. 결과 출력 (확률 제거)
+# 5. 결과 출력
 st.subheader("🎯 예측 결과")
 st.success(
     f"입력하신 조건(꽃잎 길이: **{user_petal_length}cm**, 꽃잎 너비: **{user_petal_width}cm**)에 따른 예측 품종은 **[{predicted_species}]** 입니다!"
