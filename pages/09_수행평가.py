@@ -897,3 +897,33 @@ else:
             folium.PolyLine(coords, color="#FF4B4B", weight=4, opacity=0.8).add_to(m)
             
         st_folium(m, width=600, height=540, returned_objects=[])
+import streamlit as st
+
+st.title("🛍️ 나라별 추천 기념품 & 사진 보기")
+
+# 기념품 데이터베이스 예시
+souvenir_data = {
+    "일본": [
+        {"name": "도쿄 바나나", "desc": "부드러운 바나나 커스터드 크림이 들어간 스펀지 케이크", "img": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400"},
+        {"name": "로이스 초콜릿", "desc": "입에서 부드럽게 녹아내리는 생초콜릿", "img": "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=400"}
+    ],
+    "베트남": [
+        {"name": "G7 커피", "desc": "진하고 달달한 베트남 대표 인스턴트 커피", "img": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400"},
+        {"name": "라탄 백", "desc": "휴양지 감성을 물씬 풍기는 수공예 가방", "img": "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400"}
+    ]
+}
+
+selected_country = st.selectbox("국가를 선택하세요:", list(souvenir_data.keys()))
+
+st.markdown(f"### 📦 {selected_country} 추천 기념품 리스트")
+st.caption("아래 품목을 클릭하거나 선택하면 상세 설명과 사진을 볼 수 있습니다.")
+
+for item in souvenir_data[selected_country]:
+    with st.expander(f"✨ {item['name']} 상세보기"):
+        col1, col2 = st.columns([1.5, 1])
+        with col1:
+            st.write(f"**설명:** {item['desc']}")
+            st.markdown("- **추천 대상:** 친구, 직장 동료")
+            st.markdown("- **구매 장소:** 현지 대형마트 또는 공항 면세점")
+        with col2:
+            st.image(item['img'], caption=item['name'], use_column_width=True)ㄴ
