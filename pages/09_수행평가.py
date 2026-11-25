@@ -896,8 +896,7 @@ else:
         if len(coords) > 1:
             folium.PolyLine(coords, color="#FF4B4B", weight=4, opacity=0.8).add_to(m)
             
-        st_folium(m, width=600, height=540, returned_objects=[])
-import streamlit as st
+        st_folium(m, width=600, height=540, returned_objects=[])import streamlit as st
 
 st.title("🛍️ 나라별 추천 기념품 & 사진 보기")
 
@@ -926,4 +925,4 @@ for item in souvenir_data[selected_country]:
             st.markdown("- **추천 대상:** 친구, 직장 동료")
             st.markdown("- **구매 장소:** 현지 대형마트 또는 공항 면세점")
         with col2:
-            st.image(item['img'], caption=item['name'], use_column_width=True)ㄴ
+            st.image(item['img'], caption=item['name'], use_column_width=True)
