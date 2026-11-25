@@ -896,7 +896,8 @@ else:
         if len(coords) > 1:
             folium.PolyLine(coords, color="#FF4B4B", weight=4, opacity=0.8).add_to(m)
             
-        st_folium(m, width=600, height=540, returned_objects=[])import streamlit as st
+        st_folium(m, width=600, height=540, returned_objects=[])
+        import streamlit as st
 
 st.title("🛍️ 나라별 추천 기념품 & 사진 보기")
 
